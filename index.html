@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masterclass: Estrategias de Arbitraje Financiero</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Chosen Palette: Institutional Finance -->
+    <!-- Slate (Neutral/Text), Emerald (Profit/Success), Sky (Interactive/Focus), Rose (Risk/Loss) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        },
+                        emerald: {
+                            500: '#10b981',
+                            600: '#059669',
+                        },
+                        sky: {
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+
+        /* Chart Container Styling - Mandatory per instructions */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Custom Scrollbar for strategy list */
+        .strategy-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .strategy-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        .strategy-scroll::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .triangle-node {
+            transition: all 0.3s ease;
+        }
+        .triangle-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-overlay {
+            background: rgba(15, 23, 42, 0.55);
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white shadow-lg z-10 flex-none">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-emerald-500 rounded flex items-center justify-center font-bold text-lg">A</div>
+                <h1 class="text-xl font-bold tracking-tight">Arbitrage Alpha <span class="text-slate-400 font-normal text-sm ml-2 hidden sm:inline">| Guía Interactiva de Mercados</span></h1>
+            </div>
+            <div class="text-sm text-slate-300 hidden md:block">
+                Eficiencia de Mercados &bull; Oportunidades &bull; Riesgos
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <div class="flex flex-1 overflow-hidden relative">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col z-40 md:static absolute inset-y-0 left-0 transform -translate-x-full md:translate-x-0 transition-transform duration-300" id="sidebar" aria-label="Navegación de estrategias">
+            <div class="p-4 border-b border-slate-100 bg-slate-50">
+                <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Estrategias</h2>
+                <p class="text-xs text-slate-400">Selecciona un tipo para analizar</p>
+            </div>
+            <nav class="flex-1 overflow-y-auto strategy-scroll p-2 space-y-1" id="nav-list">
+                <!-- Javascript will populate this -->
+            </nav>
+            <div class="p-4 border-t border-slate-100">
+                <button id="show-summary-btn" class="w-full py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-md transition-colors flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Resumen Comparativo
+                </button>
+            </div>
+        </aside>
+
+        <div id="sidebar-overlay" class="sidebar-overlay fixed inset-0 opacity-0 pointer-events-none transition-opacity duration-300 md:hidden"></div>
+
+        <!-- Mobile Menu Toggle -->
+        <button id="menu-toggle" class="md:hidden absolute bottom-6 right-6 bg-slate-900 text-white p-3 rounded-full shadow-xl z-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500" aria-label="Abrir menú" aria-expanded="false">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+
+        <!-- Dynamic Main Stage -->
+        <main class="flex-1 overflow-y-auto bg-slate-50 p-4 sm:p-8 relative" id="main-stage">
+
+            <!-- Welcome View (Initial State) -->
+            <div id="welcome-view" class="max-w-4xl mx-auto text-center py-12">
+                <div class="inline-block p-4 rounded-full bg-emerald-100 text-emerald-600 mb-6">
+                    <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                </div>
+                <h2 class="text-3xl font-bold text-slate-900 mb-4">Bienvenido al Centro de Arbitraje</h2>
+                <p class="text-lg text-slate-600 max-w-2xl mx-auto mb-8">
+                    El arbitraje es la búsqueda de la "eficiencia perfecta": obtener un beneficio sin riesgo aprovechando discrepancias de precios. Explora las 9 estrategias fundamentales utilizadas por instituciones y hedge funds.
+                </p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 text-left max-w-4xl mx-auto">
+                    <button class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500" onclick="selectStrategy('cash_carry')">
+                        <div class="text-sky-500 font-semibold mb-2">Futuros vs Contado</div>
+                        <p class="text-sm text-slate-500">La base de los derivados. Aprende a calcular el "Cost of Carry".</p>
+                    </button>
+                    <button class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500" onclick="selectStrategy('debt')">
+                        <div class="text-purple-500 font-semibold mb-2">Renta Fija</div>
+                        <p class="text-sm text-slate-500">Curvas de tipos y spreads de crédito. Donde operan los grandes bancos.</p>
+                    </button>
+                    <button class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500" onclick="selectStrategy('pairs')">
+                        <div class="text-rose-500 font-semibold mb-2">Estadístico</div>
+                        <p class="text-sm text-slate-500">Trading por parejas y reversión a la media. Matemáticas puras.</p>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Detail View Container (Hidden by default) -->
+            <div id="detail-view" class="hidden max-w-5xl mx-auto fade-in">
+                <!-- Header of Strategy -->
+                <div class="mb-8">
+                    <span id="strategy-category" class="text-xs font-bold text-emerald-600 uppercase tracking-wide bg-emerald-50 px-2 py-1 rounded">Categoría</span>
+                    <h2 id="strategy-title" class="text-3xl font-bold text-slate-900 mt-2">Título de la Estrategia</h2>
+                    <p id="strategy-desc" class="text-lg text-slate-600 mt-3 leading-relaxed">Descripción corta...</p>
+                </div>
+
+                <!-- Grid Layout for Content -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    <!-- Left Column: Explanation & Steps -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-semibold text-slate-900 mb-4 flex items-center">
+                                <svg class="w-5 h-5 mr-2 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                                Mecánica Operativa
+                            </h3>
+                            <div id="strategy-steps" class="space-y-4">
+                                <!-- Steps injected here -->
+                            </div>
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="bg-slate-100 p-5 rounded-lg border-l-4 border-slate-500">
+                            <h4 class="text-sm font-bold text-slate-700 uppercase mb-1">Riesgo Principal</h4>
+                            <p id="strategy-risk" class="text-sm text-slate-600">Descripción del riesgo.</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Interactive Lab/Visual -->
+                    <div class="lg:col-span-2 space-y-6">
+
+                        <!-- Visualization Card -->
+                        <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+                            <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+                                <h3 class="font-bold text-slate-800" id="viz-title">Laboratorio de Simulación</h3>
+                                <div class="flex gap-2 text-xs">
+                                    <span class="px-2 py-1 bg-slate-100 rounded text-slate-500">Interactivo</span>
+                                </div>
+                            </div>
+
+                            <!-- Visualization Container -->
+                            <div id="viz-container" class="bg-slate-50 rounded-lg p-4 min-h-[300px] flex flex-col justify-center items-center">
+                                <!-- Dynamic Content: Chart or Calculator -->
+                            </div>
+
+                            <!-- Explanation of Viz -->
+                            <p id="viz-explanation" class="text-sm text-slate-500 mt-4 italic text-center">Interactúa con los elementos superiores para ver los resultados.</p>
+                        </div>
+
+                        <!-- Example Box -->
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                            <h3 class="font-semibold text-slate-900 mb-2">Ejemplo Real</h3>
+                            <p id="strategy-example" class="text-slate-600 text-sm leading-relaxed">Ejemplo detallado...</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Table View -->
+            <div id="summary-view" class="hidden max-w-5xl mx-auto fade-in">
+                <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-900">Matriz Comparativa de Arbitraje</h2>
+                        <p class="text-sm text-slate-500 mt-1">Comparativa rápida de fuentes de beneficio, riesgo y complejidad.</p>
+                    </div>
+                    <span class="text-xs text-slate-400">Actualizado para la masterclass 2024</span>
+                </div>
+                <div class="bg-white shadow-sm rounded-xl overflow-hidden border border-slate-200">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Estrategia</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Fuente del Beneficio</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Perfil de Riesgo</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Complejidad</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-200" id="summary-table-body">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Data Store ---
+        const strategies = [
+            {
+                id: 'cash_carry',
+                title: 'Contado vs Futuros (Cash & Carry)',
+                category: 'Arbitraje de Base',
+                desc: 'Aprovecha cuando el futuro es "caro" respecto a su precio teórico. Compras el activo y vendes el futuro.',
+                risk: 'Nulo si se mantiene a vencimiento. Riesgo de "Mark-to-Market" (margin calls) durante la vida del contrato.',
+                steps: [
+                    'Detectar: Futuro > Precio Teórico.',
+                    'Paso 1: Comprar activo al contado (Spot).',
+                    'Paso 2: Vender contrato de futuro.',
+                    'Paso 3: Financiar la compra (préstamo).',
+                    'Resultado: Ganas la diferencia menos intereses.'
+                ],
+                example: 'IBEX cotiza a 9000. Futuro a 1 año a 9500. Tipos al 3%. Coste teórico = 9270. Beneficio = 9500 - 9270 = 230€ asegurados.',
+                type: 'calculator_cc',
+                complexity: 'Baja'
+            },
+            {
+                id: 'reverse_cc',
+                title: 'Arbitraje Inverso (Reverse C&C)',
+                category: 'Arbitraje de Base',
+                desc: 'Lo opuesto al Cash & Carry. Se usa cuando el futuro está "barato". Requiere vender en corto el activo.',
+                risk: 'Riesgo de ejecución en la venta en corto (disponibilidad de títulos para préstamo).',
+                steps: [
+                    'Detectar: Futuro < Precio Teórico.',
+                    'Paso 1: Venta en corto del activo Spot.',
+                    'Paso 2: Invertir el efectivo obtenido.',
+                    'Paso 3: Comprar contrato de futuro.',
+                    'Resultado: Intereses ganados superan coste del futuro.'
+                ],
+                example: 'Oro Spot 2000$. Futuro 2010$. Tipos 5%. Teórico 2100$. El futuro está barato. Vendes oro, inviertes al 5%, compras futuro barato.',
+                type: 'text_diagram',
+                complexity: 'Media'
+            },
+            {
+                id: 'debt',
+                title: 'Arbitraje de Deuda (Yield Curve)',
+                category: 'Renta Fija',
+                desc: 'Explota anomalías en la curva de tipos de interés o spreads de crédito.',
+                risk: 'Alto apalancamiento. Si la anomalía se ensancha antes de corregirse, puede liquidar la cuenta.',
+                steps: [
+                    'Analizar la curva de tipos.',
+                    'Identificar tramo "desalineado".',
+                    'Largo en el bono barato (mayor yield).',
+                    'Corto en el bono caro (menor yield).',
+                    'Esperar aplanamiento o corrección.'
+                ],
+                example: 'El bono a 2 años rinde 3% y el de 10 años rinde 2.8% (curva invertida). El trader apuesta a la normalización.',
+                type: 'chart_yield',
+                complexity: 'Alta'
+            },
+            {
+                id: 'temporal',
+                title: 'Arbitraje Temporal (Calendar Spread)',
+                category: 'Futuros',
+                desc: 'Opera la diferencia de precio entre dos vencimientos del mismo activo (ej. Marzo vs Junio).',
+                risk: 'Riesgo de base. La diferencia puede no converger como se espera debido a factores de oferta/demanda estacional.',
+                steps: [
+                    'Observar diferencial Mar-Jun.',
+                    'Si el spread es muy amplio: Vender Jun / Comprar Mar.',
+                    'Si el spread es muy estrecho: Comprar Jun / Vender Mar.',
+                    'Beneficio por corrección del spread.'
+                ],
+                example: 'Futuro Petróleo: Jun vale 80$, Dic vale 75$ (Backwardation extremo). Compras Dic, Vendes Jun esperando que se acerquen.',
+                type: 'chart_spread',
+                complexity: 'Media'
+            },
+            {
+                id: 'index',
+                title: 'Arbitraje de Índice',
+                category: 'Alta Frecuencia',
+                desc: 'Compra/Venta del índice completo vs el contrato de futuro. Requiere tecnología HFT.',
+                risk: 'Ejecución tecnológica. Latencia de milisegundos puede eliminar el beneficio.',
+                steps: [
+                    'Software calcula valor real de las 35 acciones.',
+                    'Compara con precio del Futuro IBEX.',
+                    'Si Futuro > Cesta: Vende Futuro, Compra las 35 acciones.',
+                    'Beneficio instantáneo.'
+                ],
+                example: 'El S&P 500 sube antes que sus 500 acciones. El bot vende el futuro y compra las acciones rezagadas.',
+                type: 'text_diagram',
+                complexity: 'Extrema'
+            },
+            {
+                id: 'triangular',
+                title: 'Arbitraje Triangular (Forex)',
+                category: 'Divisas',
+                desc: 'Aprovecha discrepancias entre tres monedas (ej. EUR, USD, GBP) completando un ciclo.',
+                risk: 'Slippage (deslizamiento). El precio cambia mientras completas las 3 operaciones.',
+                steps: [
+                    'EUR -> USD',
+                    'USD -> GBP',
+                    'GBP -> EUR',
+                    '¿Tengo más EUR que al inicio?'
+                ],
+                example: '1€ = 1.1$. 1.1$ = 0.9£. 0.9£ = 1.05€. Has ganado 0.05€ sin riesgo (teóricamente).',
+                type: 'visual_triangle',
+                complexity: 'Alta'
+            },
+            {
+                id: 'merger',
+                title: 'Arbitraje de Fusiones (Risk Arb)',
+                category: 'Eventos Corporativos',
+                desc: 'Compra acciones de la empresa objetivo tras anuncio de OPA, esperando capturar el spread hasta el precio final.',
+                risk: 'Alto. Si la fusión falla (reguladores, financiación), la acción se desploma. No es "libre de riesgo" real.',
+                steps: [
+                    'Empresa A ofrece 50€ por B.',
+                    'B cotiza a 48€ (incertidumbre).',
+                    'Comprar B a 48€.',
+                    'Esperar a que se cierre el trato a 50€.',
+                    'Ganancia: 2€ (4%).'
+                ],
+                example: 'Microsoft anuncia compra de Activision. Activision sube pero no llega al precio de oferta por miedo a las leyes antimonopolio.',
+                type: 'visual_progress',
+                complexity: 'Media'
+            },
+            {
+                id: 'convertible',
+                title: 'Arbitraje de Convertibles',
+                category: 'Estructura de Capital',
+                desc: 'Compra bono convertible (infravalorado) y vende en corto la acción (cobertura).',
+                risk: 'Riesgo de crédito del emisor del bono y riesgo de volatilidad.',
+                steps: [
+                    'Comprar Bono Convertible.',
+                    'Vender en Corto Acciones (Delta Hedging).',
+                    'Cobrar cupón del bono.',
+                    'Ajustar cobertura según se mueva la acción (Gamma trading).'
+                ],
+                example: 'Tesla emite bonos convertibles. El fondo compra bonos y se pone corto en acciones Tesla para neutralizar movimientos.',
+                type: 'text_diagram',
+                complexity: 'Muy Alta'
+            },
+            {
+                id: 'pairs',
+                title: 'Arbitraje Estadístico (Pairs)',
+                category: 'Cuantitativo',
+                desc: 'Busca dos activos correlacionados históricamente que divergen temporalmente.',
+                risk: 'Ruptura de correlación. Los precios pueden no volver a converger nunca (cambio fundamental).',
+                steps: [
+                    'Identificar Par (Coca-Cola / Pepsi).',
+                    'Medir spread histórico.',
+                    'Si spread > 2 desviaciones estándar:',
+                    'Vender la cara / Comprar la barata.',
+                    'Cerrar cuando convergen.'
+                ],
+                example: 'Santander y BBVA suelen moverse igual. Si BBVA sube 5% y SAN baja 0%, vendes BBVA y compras SAN.',
+                type: 'chart_pairs',
+                complexity: 'Alta'
+            }
+        ];
+
+        // --- State Management ---
+        let currentStrategyId = null;
+        let activeChart = null;
+
+        // --- Core Interactions ---
+        function init() {
+            renderNav();
+            renderSummaryTable();
+
+            // Event Listeners
+            document.getElementById('menu-toggle').addEventListener('click', toggleSidebar);
+            document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar);
+            document.getElementById('show-summary-btn').addEventListener('click', showSummary);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+        }
+
+        function openSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const toggle = document.getElementById('menu-toggle');
+            sb.classList.remove('-translate-x-full');
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-100');
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+
+        function closeSidebar() {
+            const sb = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const toggle = document.getElementById('menu-toggle');
+            if (window.innerWidth < 768) {
+                sb.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+                overlay.classList.remove('opacity-100');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            if (sb.classList.contains('-translate-x-full')) {
+                openSidebar();
+            } else {
+                closeSidebar();
+            }
+        }
+
+        function renderNav() {
+            const nav = document.getElementById('nav-list');
+            nav.innerHTML = '';
+            strategies.forEach(s => {
+                const btn = document.createElement('button');
+                btn.className = `w-full text-left px-4 py-3 rounded-md text-sm mb-1 transition-all flex items-center justify-between group focus-visible:outline focus-visible:outline-2 focus-visible:outline-sky-500 ${currentStrategyId === s.id ? 'bg-slate-200 text-slate-900 font-semibold' : 'text-slate-600 hover:bg-slate-100'}`;
+                btn.onclick = () => selectStrategy(s.id);
+                btn.innerHTML = `
+                    <span>${s.title}</span>
+                    <span class="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-400 group-hover:bg-white">${s.complexity}</span>
+                `;
+                nav.appendChild(btn);
+            });
+        }
+
+        function renderSummaryTable() {
+            const tbody = document.getElementById('summary-table-body');
+            tbody.innerHTML = strategies.map(s => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">${s.title}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500">${s.category}</td>
+                    <td class="px-6 py-4 text-sm text-slate-500 truncate max-w-xs" title="${s.risk}">${s.risk}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            ${s.complexity === 'Baja' ? 'bg-green-100 text-green-800' :
+                              s.complexity === 'Media' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'}">
+                            ${s.complexity}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showSummary() {
+            document.getElementById('welcome-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            document.getElementById('summary-view').classList.remove('hidden');
+            currentStrategyId = 'summary';
+            renderNav(); // Update active state
+            closeSidebar();
+        }
+
+        function selectStrategy(id) {
+            currentStrategyId = id;
+            const data = strategies.find(s => s.id === id);
+
+            // UI Updates
+            document.getElementById('welcome-view').classList.add('hidden');
+            document.getElementById('summary-view').classList.add('hidden');
+            const detail = document.getElementById('detail-view');
+            detail.classList.remove('hidden');
+
+            // Reset Animation
+            detail.classList.remove('fade-in');
+            void detail.offsetWidth; // trigger reflow
+            detail.classList.add('fade-in');
+
+            // Populate Text Data
+            document.getElementById('strategy-category').innerText = data.category;
+            document.getElementById('strategy-title').innerText = data.title;
+            document.getElementById('strategy-desc').innerText = data.desc;
+            document.getElementById('strategy-risk').innerText = data.risk;
+            document.getElementById('strategy-example').innerText = data.example;
+
+            document.getElementById('strategy-steps').innerHTML = data.steps.map((step, idx) => `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 h-6 w-6 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center text-xs font-bold mt-0.5 border border-sky-200">${idx + 1}</div>
+                    <p class="ml-3 text-sm text-slate-600">${step}</p>
+                </div>
+            `).join('');
+
+            // Render Visualization
+            renderVisualization(data);
+
+            renderNav(); // Update highlight
+
+            closeSidebar();
+        }
+
+        function renderVisualization(data) {
+            const container = document.getElementById('viz-container');
+            const explanation = document.getElementById('viz-explanation');
+            container.innerHTML = ''; // Clear previous
+
+            // Clean up old chart instance if exists
+            if (activeChart) {
+                activeChart.destroy();
+                activeChart = null;
+            }
+
+            if (data.type === 'calculator_cc') {
+                renderCalculator(container, explanation);
+            } else if (data.type === 'chart_yield') {
+                renderYieldChart(container, explanation);
+            } else if (data.type === 'chart_pairs') {
+                renderPairsChart(container, explanation);
+            } else if (data.type === 'visual_triangle') {
+                renderTriangleVisual(container, explanation);
+            } else if (data.type === 'visual_progress') {
+                renderProgressVisual(container, explanation);
+            } else if (data.type === 'chart_spread') {
+                renderSpreadChart(container, explanation);
+            } else {
+                // Fallback for types without specific interactive viz
+                container.innerHTML = `
+                    <div class="text-center p-8">
+                        <div class="text-6xl mb-4">📊</div>
+                        <p class="text-slate-500">Visualización simplificada para esta estrategia.</p>
+                        <div class="mt-4 p-4 bg-white border rounded text-sm text-left">
+                           <strong>Lógica Clave:</strong><br>
+                           ${data.steps[0]} -> ${data.steps[data.steps.length-1]}
+                        </div>
+                    </div>
+                `;
+                explanation.innerText = "Diagrama conceptual simplificado.";
+            }
+        }
+
+        // --- Visualizations Implementation ---
+
+        // 1. Cash & Carry Calculator
+        function renderCalculator(container, explanation) {
+            container.innerHTML = `
+                <div class="w-full max-w-sm bg-white p-4 rounded shadow-sm border border-slate-200">
+                    <h4 class="text-sm font-bold text-slate-800 mb-3 border-b pb-2">Calculadora de Arbitraje</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="block text-xs text-slate-500" for="cc-spot">Precio Spot (€)</label>
+                            <input type="number" id="cc-spot" value="100" class="w-full border rounded p-1 text-sm" min="0" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500" for="cc-rate">Tipo de Interés (%)</label>
+                            <input type="number" id="cc-rate" value="5" class="w-full border rounded p-1 text-sm" min="0" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500" for="cc-time">Tiempo (Años)</label>
+                            <input type="number" id="cc-time" value="1" class="w-full border rounded p-1 text-sm" min="0" step="0.25">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-500" for="cc-future">Precio Futuro Mercado (€)</label>
+                            <input type="number" id="cc-future" value="108" class="w-full border rounded p-1 text-sm bg-sky-50" min="0" step="0.01">
+                        </div>
+                    </div>
+                    <div class="mt-4 p-3 bg-slate-50 rounded border border-slate-200">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span>Futuro Teórico:</span>
+                            <span id="cc-result-theoretical" class="font-bold">--</span>
+                        </div>
+                        <div class="flex justify-between text-sm font-bold">
+                            <span>Beneficio:</span>
+                            <span id="cc-result-profit" class="text-emerald-600">--</span>
+                        </div>
+                    </div>
+                    <div id="cc-action" class="mt-2 text-xs text-center font-semibold text-slate-600 bg-slate-100 p-2 rounded">
+                        Calculando...
+                    </div>
+                </div>
+            `;
+
+            const inputs = ['cc-spot', 'cc-rate', 'cc-time', 'cc-future'];
+            inputs.forEach(id => document.getElementById(id).addEventListener('input', updateCC));
+            updateCC();
+
+            function updateCC() {
+                const S = parseFloat(document.getElementById('cc-spot').value) || 0;
+                const r = (parseFloat(document.getElementById('cc-rate').value) || 0) / 100;
+                const T = parseFloat(document.getElementById('cc-time').value) || 0;
+                const F_market = parseFloat(document.getElementById('cc-future').value) || 0;
+
+                // Simple Cost of Carry Model: F = S * (1 + r*T) (Simple interest approximation for clarity)
+                const F_theoretical = S * (1 + (r * T));
+                const diff = F_market - F_theoretical;
+
+                document.getElementById('cc-result-theoretical').innerText = F_theoretical.toFixed(2) + "€";
+                document.getElementById('cc-result-profit').innerText = Math.abs(diff).toFixed(2) + "€";
+
+                const actionBox = document.getElementById('cc-action');
+                if (diff > 0.1) {
+                    actionBox.innerHTML = "Oportunidad: <strong>Cash & Carry</strong><br>Futuro CARO. Compra Spot / Vende Futuro.";
+                    actionBox.className = "mt-2 text-xs text-center font-semibold text-emerald-700 bg-emerald-100 p-2 rounded border border-emerald-200";
+                } else if (diff < -0.1) {
+                    actionBox.innerHTML = "Oportunidad: <strong>Reverse Cash & Carry</strong><br>Futuro BARATO. Vende Spot / Compra Futuro.";
+                    actionBox.className = "mt-2 text-xs text-center font-semibold text-purple-700 bg-purple-100 p-2 rounded border border-purple-200";
+                } else {
+                    actionBox.innerHTML = "Sin Arbitraje (Precios alineados)";
+                    actionBox.className = "mt-2 text-xs text-center font-semibold text-slate-500 bg-slate-100 p-2 rounded";
+                }
+            }
+            explanation.innerText = "Modifica el Precio Futuro de Mercado para ver cómo surge la oportunidad de arbitraje si se desvía del teórico.";
+        }
+
+        // 2. Yield Curve Chart
+        function renderYieldChart(container, explanation) {
+            container.innerHTML = '<div class="chart-container"><canvas id="yieldChart"></canvas></div>';
+            const ctx = document.getElementById('yieldChart').getContext('2d');
+
+            activeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['3M', '2Y', '5Y', '10Y', '30Y'],
+                    datasets: [
+                        {
+                            label: 'Curva Normal (Sana)',
+                            data: [1.5, 2.0, 2.5, 3.0, 3.5],
+                            borderColor: '#10b981',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Curva Invertida (Anomalía)',
+                            data: [3.5, 3.2, 2.8, 2.5, 2.2],
+                            borderColor: '#f43f5e',
+                            borderDash: [5, 5],
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + '%';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { title: { display: true, text: 'Rendimiento (%)' } }
+                    }
+                }
+            });
+            explanation.innerText = "El arbitrajista busca anomalías (línea roja discontinua) y apuesta a que la curva volverá a su forma normal (línea verde).";
+        }
+
+        // 3. Pairs Trading Chart
+        function renderPairsChart(container, explanation) {
+            container.innerHTML = '<div class="chart-container"><canvas id="pairsChart"></canvas></div>';
+
+            // Generate correlated data that diverges
+            const labels = Array.from({length: 20}, (_, i) => i + 1);
+            const assetA = [100, 101, 102, 103, 102, 104, 105, 106, 108, 110, 112, 115, 114, 113, 112, 111, 112, 113, 114, 115];
+            // Asset B follows A but lags/diverges in the middle
+            const assetB = [98, 99, 100, 101, 100, 99, 98, 97, 98, 100, 105, 112, 112, 111, 110, 109, 110, 111, 112, 113];
+
+            const ctx = document.getElementById('pairsChart').getContext('2d');
+            activeChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Activo A (Coca-Cola)', data: assetA, borderColor: '#0ea5e9', tension: 0.3 },
+                        { label: 'Activo B (Pepsi)', data: assetB, borderColor: '#f59e0b', tension: 0.3 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Sesiones' } },
+                        y: { title: { display: true, text: 'Precio' } }
+                    }
+                }
+            });
+            explanation.innerText = "Observa la zona donde las líneas se separan. Ahí el algoritmo vende A (caro) y compra B (barato).";
+        }
+
+        // 4. Spread Chart (Temporal)
+        function renderSpreadChart(container, explanation) {
+            container.innerHTML = '<div class="chart-container"><canvas id="spreadChart"></canvas></div>';
+            const ctx = document.getElementById('spreadChart').getContext('2d');
+            activeChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun'],
+                    datasets: [
+                        {
+                            label: 'Precio Futuro',
+                            data: [50, 51, 52, 53, 58, 55],
+                            backgroundColor: '#6366f1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    if(context.dataIndex === 4) return "¡Anomalía! Vender Mayo, Comprar Abril/Junio";
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { title: { display: true, text: 'Precio ($)' } }
+                    }
+                }
+            });
+            explanation.innerText = "La barra de Mayo muestra un precio anormalmente alto. El arbitrajista vendería Mayo y compraría Junio.";
+        }
+
+        // 5. Triangular Visual
+        function renderTriangleVisual(container, explanation) {
+            container.innerHTML = `
+                <div class="relative w-64 h-64 mx-auto mt-4">
+                    <!-- Nodes -->
+                    <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center border-2 border-blue-500 font-bold text-blue-800 triangle-node z-10">EUR</div>
+                    <div class="absolute bottom-0 left-0 transform -translate-x-1/2 translate-y-1/2 w-16 h-16 bg-green-100 rounded-full flex items-center justify-center border-2 border-green-500 font-bold text-green-800 triangle-node z-10">USD</div>
+                    <div class="absolute bottom-0 right-0 transform translate-x-1/2 translate-y-1/2 w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center border-2 border-purple-500 font-bold text-purple-800 triangle-node z-10">GBP</div>
+
+                    <!-- Edges (CSS Borders) -->
+                    <div class="absolute top-8 left-8 w-48 h-48 border-l-2 border-b-2 border-slate-300 transform rotate-45 pointer-events-none"></div>
+                    <div class="absolute top-10 right-2 text-xs text-slate-400 font-mono">1. EUR→USD</div>
+                    <div class="absolute bottom-[-20px] left-1/2 transform -translate-x-1/2 text-xs text-slate-400 font-mono">2. USD→GBP</div>
+                    <div class="absolute top-10 left-[-10px] text-xs text-slate-400 font-mono">3. GBP→EUR</div>
+                </div>
+            `;
+            explanation.innerText = "El ciclo comienza y termina en EUR. Si al final tienes más EUR que al inicio, el arbitraje es exitoso.";
+        }
+
+        // 6. Merger Progress Visual
+        function renderProgressVisual(container, explanation) {
+            container.innerHTML = `
+                <div class="w-full max-w-md space-y-8 p-4">
+                    <div class="relative pt-6">
+                        <div class="flex mb-2 items-center justify-between">
+                            <div>
+                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-emerald-600 bg-emerald-200">
+                                    Precio Objetivo (OPA)
+                                </span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-semibold inline-block text-emerald-600">
+                                    50.00€
+                                </span>
+                            </div>
+                        </div>
+                        <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-emerald-100">
+                            <!-- Current Price Bar -->
+                            <div style="width: 90%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-sky-500 relative group cursor-pointer transition-all hover:bg-sky-600">
+                                <span class="absolute right-2 font-bold">45.00€ (Actual)</span>
+                                <div class="absolute -top-8 right-0 bg-slate-800 text-white text-xs p-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">Spread de 5€</div>
+                            </div>
+                        </div>
+                        <div class="text-xs text-slate-500 mt-1">
+                            El espacio vacío (10%) representa el <strong>Spread de Arbitraje</strong>. El inversor gana si el azul llega al final.
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-2 rounded text-center border">
+                            <div class="text-xs text-slate-500">Rentabilidad Potencial</div>
+                            <div class="text-lg font-bold text-emerald-600">+11%</div>
+                        </div>
+                        <div class="bg-slate-50 p-2 rounded text-center border">
+                            <div class="text-xs text-slate-500">Probabilidad Éxito</div>
+                            <div class="text-lg font-bold text-slate-700">85%</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            explanation.innerText = "La barra azul es el precio actual. El objetivo es que alcance el total (precio de oferta). El riesgo es que la barra azul retroceda si el trato se cancela.";
+        }
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
